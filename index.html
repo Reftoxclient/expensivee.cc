@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expensive.cc</title>
+  
+  <!-- Подключение шрифтов -->
+  <link href="https://fonts.cdnfonts.com/css/tt-fors-trial?styles=154098" rel="stylesheet">
+  <link href="https://fonts.cdnfonts.com/css/tt-fors-trial?styles=154087" rel="stylesheet">
+
+  <!-- Подключение манифеста PWA -->
+  <link rel="manifest" href="manifest.json">
+  <!-- Apple Touch Icon для iOS -->
+  <link rel="apple-touch-icon" href="/assets/icons/apple-icon.png">
+
+  <style>
+    /* Общие стили */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'TT Fors Trial', sans-serif;
+    }
+    body {
+      background: linear-gradient(120deg, #3C0142, #2D0E32);
+      color: #fff;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    a {
+      color: #8b75ff;
+      text-decoration: none;
+    }
+    h1, h2, h3, h4, h5 {
+      font-weight: 400;
+    }
+    /* Плавное появление */
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+      opacity: 0;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; }
+    }
+    /* Снежинки */
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      z-index: 9999;
+      color: #fff;
+      user-select: none;
+      pointer-events: none;
+      animation: snow 10s linear infinite;
+    }
+    @keyframes snow {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(110vh); }
+    }
+    .snowflake:nth-child(odd) {
+      animation-duration: 8s;
+      font-size: 0.8em;
+    }
+    .snowflake:nth-child(even) {
+      animation-duration: 12s;
+      font-size: 1.2em;
+    }
+    /* Страницы */
+    #registerPage, #mainPage {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      display: none;
+      overflow-y: auto;
+    }
+    #registerPage.active, #mainPage.active {
+      display: block;
+    }
+    /* Страница регистрации */
+    .centered {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 20px;
+    }
+    .register-container {
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 16px;
+      width: 320px;
+    }
+    .register-container h2 {
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .register-container label {
+      display: block;
+      margin: 10px 0 5px;
+      font-size: 14px;
+    }
+    .register-container input {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #444;
+      border-radius: 8px;
+      background: #1f012b;
+      color: #fff;
+      font-size: 14px;
+    }
+    .register-container button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 15px;
+      border: none;
+      border-radius: 8px;
+      background-color: #9c51ff;
+      color: #fff;
+      cursor: pointer;
+      font-size: 15px;
+      transition: background 0.2s;
+    }
+    .register-container button:hover {
+      background-color: #8f3dff;
+    }
+    /* Основная страница (Layout) */
+    .main-layout {
+      display: flex;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(6px);
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: rgba(0,0,0,0.2);
+      backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      border-right: 1px solid rgba(255,255,255,0.1);
+    }
+    .sidebar-header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .sidebar-header .avatar-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #9c51ff;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 700;
+    }
+    .sidebar-header h2 {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+    .nav-btn {
+      width: 100%;
+      text-align: left;
+      background: none;
+      border: none;
+      color: #fff;
+      padding: 10px;
+      margin-bottom: 5px;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .nav-btn:hover,
+    .nav-btn.active {
+      background: rgba(255,255,255,0.1);
+    }
+    .logout-btn {
+      margin-top: auto;
+      background: #800080;
+    }
+    .logout-btn:hover {
+      background: #a000a0;
+    }
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .tab-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    /* Info tab */
+    .info-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 12px;
+    }
+    .info-container h2 {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .rgb1337 {
+      font-weight: bold;
+      animation: colorCycle 2s infinite;
+    }
+    @keyframes colorCycle {
+      0% { color: #ff0000; }
+      25% { color: #00ff00; }
+      50% { color: #0000ff; }
+      75% { color: #ff00ff; }
+      100% { color: #ff0000; }
+    }
+    /* Profile tab */
+    .profile-container {
+      max-width: 400px;
+      margin: 0 auto;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+      padding: 20px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .profile-pic {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: url('/assets/photoo.png') no-repeat center/cover;
+      margin: 0 auto;
+      cursor: pointer;
+      border: 2px solid #fff;
+      transition: transform 0.2s;
+    }
+    .profile-pic:hover {
+      transform: scale(1.05);
+    }
+    .profile-info {
+      margin-top: 20px;
+    }
+    .invite-code {
+      margin-top: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      user-select: none;
+      color: #ddd;
+    }
+    .invite-code.hidden-code {
+      color: #999;
+      text-decoration: line-through;
+    }
+    /* Download tab */
+    .store-item {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(6px);
+      padding: 15px;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      transition: background 0.2s;
+      cursor: pointer;
+    }
+    .store-item:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .store-item img {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+    }
+    .store-item .item-info {
+      flex: 1;
+    }
+    .store-item .install-btn {
+      background: #9c51ff;
+      border: none;
+      padding: 10px;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .store-item .install-btn:hover {
+      background: #8f3dff;
+    }
+    /* Модальное окно */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+    .modal-content {
+      background: rgba(34,34,34,0.95);
+      backdrop-filter: blur(12px);
+      padding: 20px;
+      border-radius: 12px;
+      max-width: 400px;
+      width: 90%;
+      animation: fadeIn 0.3s ease;
+    }
+    .modal-content h3 {
+      margin-bottom: 10px;
+    }
+    .modal-content .desc {
+      margin-bottom: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .modal-content .modal-footer {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-content .close-btn,
+    .modal-content .install-confirm-btn {
+      background: #444;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .modal-content .close-btn:hover,
+    .modal-content .install-confirm-btn:hover {
+      background: #666;
+    }
+    .modal-content .install-confirm-btn {
+      background: #9c51ff;
+    }
+    .modal-content .install-confirm-btn:hover {
+      background: #8f3dff;
+    }
+    .progress-container {
+      margin-top: 10px;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 8px;
+      background: #9c51ff;
+      width: 0%;
+    }
+    /* Кнопка "Add to Home Screen" (Android) */
+    #installPromptBtn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #9c51ff;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 8px;
+      color: #fff;
+      cursor: pointer;
+      display: none;
+      z-index: 10002;
+      transition: background 0.2s;
+    }
+    #installPromptBtn:hover {
+      background: #8f3dff;
+    }
+  </style>
+</head>
+<body>
+  <!-- Снежинки -->
+  <div id="snowContainer"></div>
+
+  <!-- Страница регистрации -->
+  <div id="registerPage" class="centered active fade-in">
+    <div class="register-container">
+      <h2>Регистрация</h2>
+      <label for="regUsername">Username</label>
+      <input type="text" id="regUsername" placeholder="Введите имя пользователя">
+      <label for="inviteCode">Invite Code</label>
+      <input type="text" id="inviteCode" placeholder="expensive.cc-invite-xxxx">
+      <button id="registerBtn">Зарегистрироваться</button>
+    </div>
+  </div>
+
+  <!-- Основная страница -->
+  <div id="mainPage" class="main-layout">
+    <!-- Боковая панель (Sidebar) -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="avatar-icon">AE</div>
+        <h2>Expensive.cc</h2>
+      </div>
+      <button class="nav-btn active" data-tab="infoTab">Info</button>
+      <button class="nav-btn" data-tab="profileTab">Profile</button>
+      <button class="nav-btn" data-tab="downloadTab">Download</button>
+      <button class="nav-btn logout-btn" id="logoutBtn">Logout</button>
+    </aside>
+
+    <!-- Контейнер для вкладок -->
+    <div class="main-content">
+      <!-- Info Tab -->
+      <div class="tab-content active" id="infoTab">
+        <div class="info-container">
+          <h2>Information O site</h2>
+          <p><strong>Март 7 2025г.</strong></p>
+          <p>Новый сайт, улучшенный эмулятор. Современный дизайн и полноценная PWA‑функциональность.</p>
+          <p>Author: @newfastakk_Dev <span class="rgb1337">(1337)</span></p>
+        </div>
+      </div>
+
+      <!-- Profile Tab -->
+      <div class="tab-content" id="profileTab">
+        <div class="profile-container">
+          <div class="profile-pic" id="profilePic" title="Нажмите, чтобы изменить фото"></div>
+          <div class="profile-info">
+            <h3 id="profileUsername">Username</h3>
+            <div id="inviteCodeDisplay" class="invite-code">Мой инвайт: <span id="profileInviteCode">********</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Download Tab -->
+      <div class="tab-content" id="downloadTab">
+        <h2>Доступные приложения</h2>
+        <div class="store-item" id="genesisItem">
+          <img src="/assets/photoo.png" alt="Emulator Icon">
+          <div class="item-info">
+            <strong>Genesis core</strong>
+            <p>Эмулятор 2025 года</p>
+          </div>
+          <button class="install-btn">Установить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Модальное окно для установки эмулятора -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <h3 id="modalTitle">Genesis core</h3>
+      <div class="desc" id="modalDesc">
+        Это лучший эмулятор 2025 года.
+      </div>
+      <p><strong>Version:</strong> Genesis core @2.6</p>
+      <p><strong>Authors:</strong> @newfastakk (@ckamepi337)</p>
+      <div class="modal-footer">
+        <button class="close-btn" id="closeModal">Назад</button>
+        <button class="install-confirm-btn" id="startInstallBtn">Установить</button>
+      </div>
+      <div class="progress-container" id="progressContainer" style="display:none;">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Кнопка "Add to Home Screen" (Android) -->
+  <button id="installPromptBtn">Add to Home Screen</button>
+
+  <script>
+    // ===== ЗАШИФРОВАННЫЕ ИНВАЙТ-КОДЫ (пример) =====
+    // Для проверки регистрации вводите, например: expensive.cc-invite-AAAA
+    const validInviteEncrypted = [
+      btoa("expensive.cc-invite-AAAA"),
+      btoa("expensive.cc-invite-BBBB"),
+      btoa("expensive.cc-invite-CCCC"),
+      btoa("expensive.cc-invite-DDDD")
+    ];
+
+    // ===== DOM-элементы =====
+    const registerPage = document.getElementById('registerPage');
+    const mainPage = document.getElementById('mainPage');
+    const regUsername = document.getElementById('regUsername');
+    const inviteCodeInput = document.getElementById('inviteCode');
+    const registerBtn = document.getElementById('registerBtn');
+
+    const profileUsername = document.getElementById('profileUsername');
+    const profileInviteCode = document.getElementById('profileInviteCode');
+    const profilePic = document.getElementById('profilePic');
+    const inviteCodeDisplay = document.getElementById('inviteCodeDisplay');
+
+    // Sidebar navigation
+    const navButtons = document.querySelectorAll('.nav-btn');
+    const infoTab = document.getElementById('infoTab');
+    const profileTab = document.getElementById('profileTab');
+    const downloadTab = document.getElementById('downloadTab');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Модальное окно
+    const modalOverlay = document.getElementById('modalOverlay');
+    const closeModalBtn = document.getElementById('closeModal');
+    const startInstallBtn = document.getElementById('startInstallBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+
+    // Эмулятор (Download)
+    const genesisItem = document.getElementById('genesisItem');
+
+    // Кнопка "Add to Home Screen"
+    let deferredPrompt;
+    const installPromptBtn = document.getElementById('installPromptBtn');
+
+    // ===== Регистрация =====
+    registerBtn.addEventListener('click', () => {
+      const usernameVal = regUsername.value.trim();
+      const inviteVal = inviteCodeInput.value.trim();
+      if (!usernameVal || !inviteVal) {
+        alert('Введите Username и Invite Code!');
+        return;
+      }
+      const encryptedInput = btoa(inviteVal);
+      if (!validInviteEncrypted.includes(encryptedInput)) {
+        alert('Неверный Invite Code!');
+        return;
+      }
+      profileUsername.textContent = usernameVal;
+      profileInviteCode.textContent = inviteVal;
+      registerPage.classList.remove('active');
+      mainPage.classList.add('active');
+    });
+
+    // ===== Навигация (Sidebar) =====
+    navButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        infoTab.classList.remove('active');
+        profileTab.classList.remove('active');
+        downloadTab.classList.remove('active');
+        const target = btn.getAttribute('data-tab');
+        if (target) {
+          document.getElementById(target).classList.add('active');
+        }
+      });
+    });
+
+    // ===== Logout =====
+    logoutBtn.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    // ===== Смена фото профиля =====
+    profilePic.addEventListener('click', () => {
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          profilePic.style.backgroundImage = `url(${evt.target.result})`;
+        };
+        reader.readAsDataURL(file);
+      };
+      fileInput.click();
+    });
+
+    // ===== Показ/скрыть Invite Code =====
+    inviteCodeDisplay.addEventListener('click', () => {
+      inviteCodeDisplay.classList.toggle('hidden-code');
+    });
+
+    // ===== Модальное окно (установка эмулятора) =====
+    genesisItem.addEventListener('click', () => {
+      modalOverlay.style.display = 'flex';
+    });
+    closeModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'none';
+      resetInstall();
+    });
+    startInstallBtn.addEventListener('click', () => {
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      startInstallBtn.disabled = true;
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 1;
+        progressBar.style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+          setTimeout(() => {
+            window.location.href = '/assets/emulator.apk';
+          }, 500);
+        }
+      }, 40);
+    });
+    function resetInstall() {
+      progressContainer.style.display = 'none';
+      progressBar.style.width = '0%';
+      startInstallBtn.disabled = false;
+    }
+
+    // ===== Снежинки =====
+    const snowContainer = document.getElementById('snowContainer');
+    const snowSymbols = ['\u2744','\u2745','\u2746','❅','❆'];
+    function createSnowflake() {
+      const snowflake = document.createElement('div');
+      snowflake.className = 'snowflake';
+      snowflake.style.left = Math.random() * 100 + '%';
+      snowflake.style.fontSize = (Math.random() * 10 + 10) + 'px';
+      snowflake.innerText = snowSymbols[Math.floor(Math.random() * snowSymbols.length)];
+      snowContainer.appendChild(snowflake);
+      snowflake.addEventListener('animationend', () => snowflake.remove());
+    }
+    setInterval(createSnowflake, 300);
+
+    // ===== PWA: Add to Home Screen =====
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installPromptBtn.style.display = 'block';
+    });
+    installPromptBtn.addEventListener('click', () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((choiceResult) => {
+          console.log('User choice: ', choiceResult.outcome);
+          deferredPrompt = null;
+          installPromptBtn.style.display = 'none';
+        });
+      }
+    });
+
+    // ===== Service Worker Registration =====
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker registered!'))
+        .catch(err => console.error('Service Worker registration failed: ', err));
+    }
+  </script>
+</body>
+</html>
